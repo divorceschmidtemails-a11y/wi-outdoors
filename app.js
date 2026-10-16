@@ -20,7 +20,6 @@ async function usgs(site,par,per='&period=P2D'){const j=await(await fetch('https
 async function river(){let h='<table>';
 try{const v=await usgs('05386400','00065'),last=v[v.length-1],old=v.find(x=>new Date(x.dateTime)>Date.now()-864e5)||v[0],d=(+last.value)-(+old.value);C.stage=+last.value;C.trend=d;C.trendTxt=d>0.15?'Rising':d<-0.15?'Falling':'Stable';
 h+='<tr><td>Brownsville, MN (Pool 8, USGS)</td><td><b>'+last.value+' ft</b><br><span class=s>24h: '+(d>=0?'+':'')+d.toFixed(2)+' ft · '+C.trendTxt+'</span></td></tr>'}catch(e){h+='<tr><td>Brownsville stage</td><td>unavailable</td></tr>'}
-try{const v=await usgs('05389500','00060',''),last=v[v.length-1];C.flow=+last.value;h+='<tr><td>Flow at McGregor, IA (USGS)</td><td><b>'+(+last.value).toLocaleString()+' cfs</b><br><span class=s>'+new Date(last.dateTime).toLocaleString([],{month:'short',day:'numeric',hour:'numeric'})+'</span></td></tr>'}catch(e){}
 try{const s=(await(await fetch('https://api.water.noaa.gov/nwps/v1/gauges/GENW3')).json()).status.observed;h+='<tr><td>Below L&amp;D 8, Genoa (NOAA)</td><td><b>'+s.primary+' ft</b> elev · '+s.secondary+' kcfs<br><span class=s>'+s.floodCategory.replace(/_/g,' ')+'</span></td></tr>'}catch(e){}
 $('river').innerHTML=h+'</table><div class=s>No nearby Mississippi gauge reports water temperature. Links: <a href="https://waterdata.usgs.gov/monitoring-location/05386400/">USGS Brownsville</a> · <a href="https://water.noaa.gov/gauges/GENW3">NOAA Genoa</a> · <a href="https://water.noaa.gov/gauges/LACW3">NOAA La Crosse</a></div>';advise()}
 async function wx(){try{const u='https://api.open-meteo.com/v1/forecast?latitude='+P.lat+'&longitude='+P.lon+'&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,surface_pressure&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability,surface_pressure&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=5&past_days=1';
@@ -103,3 +102,20 @@ function renderHappy(){const l=getLog().filter(t=>t.happy!=null);if(!l.length){$
 const r=a=>a.length?(a.reduce((x,t)=>x+t.fish,0)/a.length).toFixed(1):'–',y=l.filter(t=>t.happy),n=l.filter(t=>!t.happy);
 $('eStats').innerHTML='<b>Happy nights:</b> '+y.length+' · '+r(y)+' fish/night<br><b>Not-happy nights:</b> '+n.length+' · '+r(n)+' fish/night'}
 renderHappy();
+
+// FISH COUNTER
+const FK='wiCount';const defN=['Wes','Dad',"Dad's buddy",'Player 4'];
+const getF=()=>JSON.parse(localStorage[FK]||'{"names":null,"fish":[]}');const setF=o=>localStorage[FK]=JSON.stringify(o);
+function renderCount(){const o=getF(),names=o.names||defN,today=new Date().toDateString(),yr=new Date().getFullYear();
+const cnt=(i,fn)=>o.fish.filter(x=>x.p===i&&fn(x)).length,td=names.map((_,i)=>cnt(i,x=>new Date(x.t).toDateString()===today)),ss=names.map((_,i)=>cnt(i,x=>new Date(x.t).getFullYear()===yr));
+const lead=Math.max(...td);
+$('fc').innerHTML=names.map((n,i)=>'<div class=card style="background:'+(lead>0&&td[i]===lead?'#3d5a1f;border:3px solid #f0a83a':'#1b2816')+'"><input value="'+n.replace(/"/g,'&quot;')+'" onchange="fName('+i+',this.value)" style="font-size:22px;font-weight:700">'+(lead>0&&td[i]===lead?'<div>👑 Leader</div>':'')+'<div style="display:flex;align-items:center;gap:10px"><button onclick="fMinus('+i+')" style="font-size:32px;width:80px;background:#553;color:#eee">−1</button><div style="flex:1;text-align:center"><div class=score>'+td[i]+'</div><div class=s>today · season '+ss[i]+'</div></div><button onclick="fPlus('+i+')" style="font-size:32px;width:80px;background:#8fe08f">+1</button></div></div>').join('');
+const rec=o.fish.filter(x=>new Date(x.t).toDateString()===today).slice(-6).reverse();$('fcRec').innerHTML=rec.map(x=>names[x.p]+': '+(x.sp||'fish')+(x.len?' '+x.len+'"':'')+' · '+f(new Date(x.t))).join('<br>')}
+window.fName=(i,v)=>{const o=getF();o.names=o.names||defN.slice();o.names[i]=v||defN[i];setF(o);renderCount()};
+window.fPlus=i=>{const o=getF();o.fish.push({p:i,t:Date.now(),sp:$('fcSp').value,len:$('fcLen').value});setF(o);$('fcLen').value='';renderCount()};
+window.fMinus=i=>{const o=getF(),today=new Date().toDateString();for(let k=o.fish.length-1;k>=0;k--)if(o.fish[k].p===i&&new Date(o.fish[k].t).toDateString()===today){o.fish.splice(k,1);break}setF(o);renderCount()};
+$('fcShare').onclick=async()=>{const o=getF(),names=o.names||defN,today=new Date().toDateString(),yr=new Date().getFullYear();const rows=names.map((n,i)=>[n,o.fish.filter(x=>x.p===i&&new Date(x.t).toDateString()===today).length,o.fish.filter(x=>x.p===i&&new Date(x.t).getFullYear()===yr).length]).sort((a,b)=>b[1]-a[1]);
+const big=o.fish.filter(x=>new Date(x.t).toDateString()===today&&x.len).sort((a,b)=>b.len-a.len)[0];
+const txt='🎣 Fish count '+new Date().toLocaleDateString()+'\n'+rows.map((r,k)=>(k===0&&r[1]>0?'👑 ':'')+r[0]+': '+r[1]+' today ('+r[2]+' season)').join('\n')+(big?'\nBiggest: '+names[big.p]+' '+big.len+'" '+(big.sp||''):'');
+if(navigator.share){try{await navigator.share({text:txt});return}catch(e){}}try{await navigator.clipboard.writeText(txt);alert('Copied! Paste into a text.')}catch(e){prompt('Copy this:',txt)}};
+renderCount();

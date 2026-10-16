@@ -12,7 +12,7 @@ a{color:#9fd3ff}.chk{color:#ffb4a2;font-weight:600}.s{font-size:15px;color:#c3c3
 button,select,input,textarea{font-size:19px;border-radius:10px;border:0;padding:10px}button{background:#f0a83a;color:#111;font-weight:600;margin:4px 4px 4px 0}
 input,select,textarea{background:#f4f1e8;color:#111;width:100%;box-sizing:border-box;margin:4px 0 10px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0e160a;border-top:1px solid #3c5236;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;color:#ccc;margin:0;padding:12px 2px;font-size:15px;border-radius:0}nav button.on{color:#f0a83a;border-top:3px solid #f0a83a}
+nav button{flex:1;background:none;color:#ccc;margin:0;padding:12px 1px;font-size:14px;border-radius:0}nav button.on{color:#f0a83a;border-top:3px solid #f0a83a}
 .tab{display:none}.tab.on{display:block}#map{height:65vh;border-radius:14px}
 .score{font-size:44px;font-weight:800}.good{color:#8fe08f}.ok{color:#f0d33a}.bad{color:#ff8f7a}
 #gate{position:fixed;inset:0;background:#16210f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
@@ -67,6 +67,11 @@ li{margin:4px 0}
 <section class="tab" id="t-map"><div id="map"></div>
 <div class="s">Ramps come from OpenStreetMap and only a few have names. They're mapped, not field-verified, so check access, fees and refuge closures before launching. Tap a marker for directions.</div></section>
 
+<section class="tab" id="t-count"><div class="card"><h2>🏆 Fish Counter</h2><div class="s">Next fish (optional):</div>
+<select id="fcSp"><option value="">Species…</option><option>Walleye</option><option>Sauger</option><option>Smallmouth</option><option>Largemouth</option><option>Northern pike</option><option>Perch</option><option>Crappie</option><option>Bluegill</option><option>Catfish</option><option>White bass</option><option>Other</option></select>
+<input id="fcLen" type="number" step="0.5" placeholder="Length (inches)"></div><div id="fc"></div>
+<button id="fcShare" style="width:100%;font-size:22px">📤 Share scores</button><div class="card"><h2>Today's catches</h2><div id="fcRec" class="s"></div></div>
+<div class="s">Scores are saved on this phone only, so use one boat phone.</div></section>
 <section class="tab" id="t-regs">
 <div class="card"><h2>2026 Deer</h2><table>
 <tr><td>Archery &amp; Crossbow</td><td>Sept. 12 – Jan. 3, 2027*</td></tr>
@@ -120,6 +125,6 @@ Much of the river around Victory is in the <a href="https://www.fws.gov/refuge/u
 <div class="card"><h2>Licenses</h2>Buy &amp; carry licenses on the <a href="https://gowild.wi.gov/">Go Wild</a> app (digital licenses accepted). Prices &amp; Conservation Patron details: <span class="chk">check DNR</span>.</div>
 <div class="s">Regulations pulled from dnr.wisconsin.gov on Oct. 16, 2026. The DNR regulations are the final word.</div>
 </section></main>
-<nav><button data-t="brain" class="on">🎣 Brain</button><button data-t="log">📓 Log</button><button data-t="map">🗺️ Map</button><button data-t="regs">📋 Regs</button></nav></div>
+<nav><button data-t="brain" class="on">🎣 Brain</button><button data-t="log">📓 Log</button><button data-t="count">🏆 Count</button><button data-t="map">🗺️ Map</button><button data-t="regs">📋 Regs</button></nav></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script></body></html>
