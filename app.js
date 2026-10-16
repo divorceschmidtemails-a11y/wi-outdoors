@@ -58,8 +58,8 @@ const grp=(name,fn)=>{const g={};l.forEach(t=>{const k=fn(t);if(k==null||k==='')
 grp('Spot',t=>t.spot);grp('River',t=>t.cond.river);grp('Pressure',t=>t.cond.presTrend);grp('Wind',t=>t.cond.wind==null?null:t.cond.wind<5?'Calm <5':t.cond.wind<=15?'5–15 mph':'15+ mph');grp('Wind direction',t=>t.cond.windDir);grp('Moon',t=>t.cond.moon);grp('Bait',t=>t.bait);
 $('lStats').innerHTML=h+'</table>'}
 window.delTrip=id=>{if(confirm('Delete this trip?')){setLog(getLog().filter(t=>t.id!==id));renderLog()}};
-$('lExp').onclick=async()=>{const data=JSON.stringify(getLog(),null,1),file=new File([data],'walleye-log-'+new Date().toISOString().slice(0,10)+'.json',{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Walleye log'});return}catch(e){}}const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;a.click()};
-$('lImp').onchange=async e=>{try{const inc=JSON.parse(await e.target.files[0].text()),l=getLog(),ids=new Set(l.map(t=>t.id));inc.forEach(t=>{if(t&&t.id&&!ids.has(t.id))l.push(t)});setLog(l);renderLog();alert('Imported')}catch(err){alert('Could not read that file')}};
+$('lExp').onclick=async()=>{const data=JSON.stringify({trips:getLog(),notes:getN()},null,1),file=new File([data],'walleye-log-'+new Date().toISOString().slice(0,10)+'.json',{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Walleye log'});return}catch(e){}}const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;a.click()};
+$('lImp').onchange=async e=>{try{let inc=JSON.parse(await e.target.files[0].text());if(!Array.isArray(inc)){const nn=getN(),ni=new Set(nn.map(x=>x.id));(inc.notes||[]).forEach(x=>{if(x&&x.id&&!ni.has(x.id))nn.push(x)});localStorage[NK]=JSON.stringify(nn);renderNotes();inc=inc.trips||[]}const l=getLog(),ids=new Set(l.map(t=>t.id));inc.forEach(t=>{if(t&&t.id&&!ids.has(t.id))l.push(t)});setLog(l);renderLog();alert('Imported')}catch(err){alert('Could not read that file')}};
 // MAP
 let map;const RAMPS=[[43.5383995,-91.276789,'Millstone Landing (IA)'],[43.4926842,-91.2485265,'New Albin Landing (IA)'],[43.4636212,-91.2233661],[43.4609728,-91.2252139],[43.4551287,-91.2238129],[43.5195029,-91.222548],[43.5515553,-91.2346949],[43.4177864,-91.1980302],[43.3909107,-91.1815235],[43.3670657,-91.2085855],[43.4742345,-91.2949722],[43.3490189,-91.1027336],[43.3480573,-91.2083674]];
 function initMap(){if(map){setTimeout(()=>map.invalidateSize(),100);return}map=L.map('map').setView([HOME.lat,HOME.lon],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
@@ -69,3 +69,20 @@ navigator.geolocation&&navigator.geolocation.watchPosition(p=>{if(!map._me)map._
 function run(){sun();wx();river()}
 $('gps').onclick=e=>{e.preventDefault();navigator.geolocation.getCurrentPosition(p=>{P={lat:p.coords.latitude,lon:p.coords.longitude};$('loc').firstChild.textContent='Your GPS ('+P.lat.toFixed(3)+', '+P.lon.toFixed(3)+') · ';sun();wx()},()=>alert('Location not allowed'))};
 $('home').onclick=e=>{e.preventDefault();P=HOME;$('loc').firstChild.textContent='Victory, WI (Stevens Rd) · ';sun();wx()};
+
+// RIVER NOTES
+const NK='wiNotes',getN=()=>JSON.parse(localStorage[NK]||'[]');const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function snap(){return{air:C.air,wind:C.wind&&Math.round(C.wind),windDir:C.windDir,pres:C.pres&&+C.pres.toFixed(2),presTrend:C.presTxt,stage:C.stage,river:C.trendTxt,moon:C.moon,waterTemp:C.wt||null}}
+if(!SR){$('mic').disabled=true;$('mic').style.opacity=.5;$('micMsg').textContent='Voice typing isn\'t supported in this browser. Type the note below, or tap the keyboard\'s 🎤 dictation key.'}
+else{let rec,on=false;$('mic').onclick=()=>{if(on){rec.stop();return}rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;const base=$('nText').value;
+rec.onresult=e=>{let t='';for(const r of e.results)t+=r[0].transcript;$('nText').value=(base?base+' ':'')+t};
+rec.onerror=e=>{$('micMsg').textContent='Mic error: '+e.error+'. You can type instead.'};
+rec.onend=()=>{on=false;$('mic').textContent='🎤 Tap to talk';$('mic').style.background=''};
+rec.start();on=true;$('mic').textContent='⏹️ Listening… tap to stop';$('mic').style.background='#e66';$('micMsg').textContent=''}}
+$('nSave').onclick=()=>{const text=$('nText').value.trim();if(!text)return;const n={id:Date.now(),time:new Date().toISOString(),text,cond:snap(),gps:null};
+const done=()=>{const l=getN();l.push(n);localStorage[NK]=JSON.stringify(l);$('nText').value='';renderNotes()};
+if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{n.gps=[+p.coords.latitude.toFixed(5),+p.coords.longitude.toFixed(5)];done()},done,{timeout:8000});else done()};
+function renderNotes(){const q=($('nSearch').value||'').toLowerCase();const l=getN().filter(n=>!q||n.text.toLowerCase().includes(q)).sort((a,b)=>b.id-a.id);
+$('nList').innerHTML=l.map(n=>'<div class=card style="background:#1b2816"><b>'+new Date(n.time).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</b><div>'+n.text.replace(/</g,'&lt;')+'</div><div class=s>'+[n.cond.windDir&&('wind '+n.cond.windDir+' '+n.cond.wind),n.cond.air!=null&&(Math.round(n.cond.air)+'°F'),n.cond.pres&&(n.cond.pres+' inHg '+(n.cond.presTrend||'')),n.cond.stage&&('river '+n.cond.stage+' ft '+(n.cond.river||'')),n.cond.moon,n.gps&&('<a href="https://maps.apple.com/?ll='+n.gps+'&q=Note">📍 map</a>')].filter(Boolean).join(' · ')+'</div><button onclick="delNote('+n.id+')" style="background:#553;color:#eee;font-size:15px">Delete</button></div>').join('')||'<div class=s>No notes'+(q?' match':' yet')+'.</div>'}
+window.delNote=id=>{if(confirm('Delete note?')){localStorage[NK]=JSON.stringify(getN().filter(n=>n.id!==id));renderNotes()}};
+$('nSearch').oninput=renderNotes;renderNotes();
