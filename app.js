@@ -86,3 +86,20 @@ function renderNotes(){const q=($('nSearch').value||'').toLowerCase();const l=ge
 $('nList').innerHTML=l.map(n=>'<div class=card style="background:#1b2816"><b>'+new Date(n.time).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</b><div>'+n.text.replace(/</g,'&lt;')+'</div><div class=s>'+[n.cond.windDir&&('wind '+n.cond.windDir+' '+n.cond.wind),n.cond.air!=null&&(Math.round(n.cond.air)+'°F'),n.cond.pres&&(n.cond.pres+' inHg '+(n.cond.presTrend||'')),n.cond.stage&&('river '+n.cond.stage+' ft '+(n.cond.river||'')),n.cond.moon,n.gps&&('<a href="https://maps.apple.com/?ll='+n.gps+'&q=Note">📍 map</a>')].filter(Boolean).join(' · ')+'</div><button onclick="delNote('+n.id+')" style="background:#553;color:#eee;font-size:15px">Delete</button></div>').join('')||'<div class=s>No notes'+(q?' match':' yet')+'.</div>'}
 window.delNote=id=>{if(confirm('Delete note?')){localStorage[NK]=JSON.stringify(getN().filter(n=>n.id!==id));renderNotes()}};
 $('nSearch').oninput=renderNotes;renderNotes();
+
+// END SESSION
+let AC,nodes=[];
+function ambience(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const t0=AC.currentTime,out=AC.createGain();out.gain.value=0;out.gain.linearRampToValueAtTime(.6,t0+3);out.connect(AC.destination);nodes.push(out);
+const len=AC.sampleRate*4,buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);let b=0;for(let i=0;i<len;i++){b=(b+.02*(Math.random()*2-1))/1.02;d[i]=b*3}
+const w=AC.createBufferSource();w.buffer=buf;w.loop=true;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=500;const wg=AC.createGain();wg.gain.value=.5;const lfo=AC.createOscillator();lfo.frequency.value=.15;const lg=AC.createGain();lg.gain.value=.25;lfo.connect(lg).connect(wg.gain);w.connect(lp).connect(wg).connect(out);w.start();lfo.start();nodes.push(w,lfo);
+const cr=()=>{if(!nodes.length)return;const t=AC.currentTime;for(let k=0;k<3;k++){const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=4300+Math.random()*300;g.gain.setValueAtTime(0,t+k*.07);g.gain.linearRampToValueAtTime(.04,t+k*.07+.01);g.gain.linearRampToValueAtTime(0,t+k*.07+.05);o.connect(g).connect(out);o.start(t+k*.07);o.stop(t+k*.07+.06)}setTimeout(cr,400+Math.random()*900)};cr();
+const loon=()=>{if(!nodes.length)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(620,t);o.frequency.linearRampToValueAtTime(930,t+.8);o.frequency.setValueAtTime(930,t+1.6);o.frequency.linearRampToValueAtTime(780,t+2.6);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.06,t+.4);g.gain.linearRampToValueAtTime(0,t+2.8);const dl=AC.createDelay();dl.delayTime.value=.35;const fb=AC.createGain();fb.gain.value=.3;o.connect(g);g.connect(out);g.connect(dl);dl.connect(fb).connect(dl);dl.connect(out);o.start(t);o.stop(t+3);setTimeout(loon,9000+Math.random()*12000)};setTimeout(loon,2500)}
+function stopAmb(){nodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});nodes=[]}
+$('eBtn').onclick=()=>{stopAmb();ambience();$('ePrompt').hidden=false;$('ePrompt').scrollIntoView({behavior:'smooth'})};
+$('eStop').onclick=stopAmb;
+const answer=happy=>{const l=getLog();l.push({id:Date.now(),date:new Date().toISOString().slice(0,10),type:'session',spot:$('eSpot').value,fish:+$('eFish').value||0,happy,bait:'',notes:happy?'Happy 🙂':'Not happy',cond:Object.assign(snap(),{cloud:C.cloud,score:C.score})});setLog(l);$('ePrompt').hidden=true;stopAmb();renderLog();renderHappy();alert(happy?'Logged. Good night on the river 🌙':'Logged. Tomorrow\'s another day 🎣')};
+$('eYes').onclick=()=>answer(true);$('eNo').onclick=()=>answer(false);
+function renderHappy(){const l=getLog().filter(t=>t.happy!=null);if(!l.length){$('eStats').textContent='Happy-night stats will show here after your first session.';return}
+const r=a=>a.length?(a.reduce((x,t)=>x+t.fish,0)/a.length).toFixed(1):'–',y=l.filter(t=>t.happy),n=l.filter(t=>!t.happy);
+$('eStats').innerHTML='<b>Happy nights:</b> '+y.length+' · '+r(y)+' fish/night<br><b>Not-happy nights:</b> '+n.length+' · '+r(n)+' fish/night'}
+renderHappy();

@@ -40,6 +40,13 @@ li{margin:4px 0}
 </section>
 
 <section class="tab" id="t-log">
+<div class="card"><h2>🌙 End Session</h2><label>Spot<input id="eSpot" placeholder="where you fished"></label><label>Walleye caught<input id="eFish" type="number" min="0" value="0"></label>
+<button id="eBtn" style="width:100%;font-size:24px;padding:20px">🌙 End Session</button>
+<div id="ePrompt" hidden style="text-align:center"><div class="big" style="font-size:38px;margin:14px 0">Are you happy? 🙂</div>
+<button id="eYes" style="font-size:30px;padding:18px 34px;background:#8fe08f">YES</button> <button id="eNo" style="font-size:30px;padding:18px 34px;background:#ff8f7a">NO</button>
+<div><button id="eStop" style="background:#553;color:#eee;font-size:16px">🔇 Stop sounds</button></div></div>
+<div class="s"><a target="_blank" href="https://www.youtube.com/results?search_query=Nitty+Gritty+Dirt+Band+Fishin%27+in+the+Dark">▶️ Play "Fishin' in the Dark" (YouTube)</a> · <a target="_blank" href="https://open.spotify.com/search/Fishin%27%20in%20the%20Dark%20Nitty%20Gritty%20Dirt%20Band">Spotify</a></div>
+<div id="eStats" class="s"></div></div>
 <div class="card"><h2>🎙️ River Notes</h2><button id="mic" style="width:100%;font-size:26px;padding:22px">🎤 Tap to talk</button><div id="micMsg" class="s"></div>
 <textarea id="nText" rows="3" placeholder="Your note appears here. You can also type it."></textarea><button id="nSave">Save note</button>
 <input id="nSearch" placeholder="Search notes…"><div id="nList"></div></div>
