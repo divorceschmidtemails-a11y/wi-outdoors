@@ -104,7 +104,7 @@ $('eStats').innerHTML='<b>Happy nights:</b> '+y.length+' · '+r(y)+' fish/night<
 renderHappy();
 
 // FISH COUNTER
-const FK='wiCount';const defN=['Wes','Dad',"Dad's buddy",'Player 4'];
+const FK='wiCount';const defN=['Kevin','Collin','Spongie','Mark the Dominator'];
 const getF=()=>JSON.parse(localStorage[FK]||'{"names":null,"fish":[]}');const setF=o=>localStorage[FK]=JSON.stringify(o);
 function renderCount(){const o=getF(),names=o.names||defN,today=new Date().toDateString(),yr=new Date().getFullYear();
 const cnt=(i,fn)=>o.fish.filter(x=>x.p===i&&fn(x)).length,td=names.map((_,i)=>cnt(i,x=>new Date(x.t).toDateString()===today)),ss=names.map((_,i)=>cnt(i,x=>new Date(x.t).getFullYear()===yr));
