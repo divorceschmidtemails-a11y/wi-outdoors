@@ -1,30 +1,63 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="WI Outdoors"><meta name="theme-color" content="#2f4a2a">
-<title>Victory WI Outdoors</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="WI Outdoors"><meta name="theme-color" content="#1d2b1a">
+<title>Victory WI Walleye</title><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-body{margin:0;font:17px/1.4 -apple-system,system-ui,sans-serif;background:#1d2b1a;color:#eee}
-main{padding:12px 14px 40px;max-width:640px;margin:auto}h1{font-size:22px;margin:8px 0}h2{font-size:18px;color:#e8a33d;margin:0 0 6px}
-.card{background:#2a3b26;border-radius:12px;padding:12px;margin:12px 0}table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 2px;border-bottom:1px solid #3c5236;vertical-align:top}td:last-child{text-align:right}
-a{color:#9fd3ff}.chk{color:#ffb4a2;font-weight:600}.s{font-size:13px;color:#bbb}button{font-size:17px;padding:10px 14px;border-radius:10px;border:0;background:#e8a33d;color:#111}
-#gate{position:fixed;inset:0;background:#1d2b1a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9}
-#gate input{font-size:32px;width:150px;text-align:center;letter-spacing:10px;padding:8px;border-radius:10px;border:0;margin:12px}
-.big{font-size:26px;font-weight:700}
+body{margin:0;font:19px/1.45 -apple-system,system-ui,sans-serif;background:#16210f;color:#f0eee6}
+main{padding:10px 14px 110px;max-width:680px;margin:auto}h1{font-size:24px;margin:6px 0}h2{font-size:21px;color:#f0a83a;margin:0 0 8px}
+.card{background:#24331e;border-radius:14px;padding:14px;margin:12px 0}table{width:100%;border-collapse:collapse;font-size:17px}td{padding:6px 2px;border-bottom:1px solid #3c5236;vertical-align:top}td:last-child{text-align:right}
+a{color:#9fd3ff}.chk{color:#ffb4a2;font-weight:600}.s{font-size:15px;color:#c3c3b8}.big{font-size:30px;font-weight:700}
+button,select,input,textarea{font-size:19px;border-radius:10px;border:0;padding:10px}button{background:#f0a83a;color:#111;font-weight:600;margin:4px 4px 4px 0}
+input,select,textarea{background:#f4f1e8;color:#111;width:100%;box-sizing:border-box;margin:4px 0 10px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0e160a;border-top:1px solid #3c5236;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:#ccc;margin:0;padding:12px 2px;font-size:15px;border-radius:0}nav button.on{color:#f0a83a;border-top:3px solid #f0a83a}
+.tab{display:none}.tab.on{display:block}#map{height:65vh;border-radius:14px}
+.score{font-size:44px;font-weight:800}.good{color:#8fe08f}.ok{color:#f0d33a}.bad{color:#ff8f7a}
+#gate{position:fixed;inset:0;background:#16210f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+#gate input{font-size:36px;width:170px;text-align:center;letter-spacing:12px}
+li{margin:4px 0}
 </style></head><body>
-<div id="gate"><h1>WI Outdoors</h1><div>Enter 4-digit code</div><input id="pin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off"><div id="bad" class="chk"></div></div>
-<main id="app" hidden>
-<h1>Victory, WI · Hunt &amp; Fish</h1>
-<div class="s" id="loc">Location: Victory, WI (Stevens Rd area, approx.) · <a href="#" id="gps">Use my GPS</a> · <a href="#" id="home">Reset</a></div>
+<div id="gate"><h1>Victory Walleye</h1><div>Enter 4-digit code</div><input id="pin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off"><div id="bad" class="chk"></div></div>
+<div id="app" hidden><main>
+<div class="s" id="loc">Victory, WI (Stevens Rd) · <a href="#" id="gps">Use my GPS</a> · <a href="#" id="home">Reset</a></div>
 
-<div class="card"><h2>Today: Sun &amp; Shooting Hours</h2><div id="sun">…</div>
-<div class="s">Shooting hours shown use the common Wisconsin rule (deer &amp; most small game: 20 min before sunrise to 20 min after sunset; waterfowl ends at sunset). Computed, not official. Confirm with DNR's <a href="https://dnr.wisconsin.gov/topic/hunt/deer">2026 Southern Shooting Hours tables</a> (Vernon County is in the southern area — check DNR).</div></div>
+<section class="tab on" id="t-brain">
+<div class="card"><h2>Fish Today? <span class="s">(heuristic score)</span></h2><div id="adv">Loading conditions…</div></div>
+<div class="card"><h2>Sun, Moon &amp; Bite Windows</h2><div id="sun"></div><div id="moon"></div>
+<div class="s">Bite windows are an approximate solunar estimate (moon overhead/underfoot = major, moonrise/set ≈ minor), computed on the phone. Shooting hours use the common WI rule (20 min before sunrise to 20 min after sunset). Confirm in DNR's <a href="https://dnr.wisconsin.gov/topic/hunt/deer">2026 shooting hours tables</a>.</div></div>
+<div class="card"><h2>Mississippi River</h2><div id="river">Loading…</div></div>
+<div class="card"><h2>Weather, Wind &amp; Pressure</h2><div id="wx">Loading…</div><div class="s">Source: <a href="https://open-meteo.com/">Open-Meteo</a></div></div>
+<div class="card"><h2>How the score works</h2><div class="s">These are rules of thumb, not a guarantee:
+<ul><li><b>Water temp:</b> no USGS gauge on this stretch of the Mississippi reports water temperature (closest Mississippi gauges at Brownsville and McGregor report stage/flow only). Enter a thermometer or sonar reading below. Fall cooling from about 60°F down to 45°F tends to be a strong feeding period. Under 40°F, fish slow down and stack in the tailwaters.</li>
+<li><b>River trend:</b> stable or slowly falling water is generally best. Fish wing dams and current breaks. Rising or muddy water pushes fish to slack areas: backwater/slough mouths, behind islands, and close to the bank.</li>
+<li><b>Wind:</b> 5–15 mph "walleye chop" helps, especially onto wind-blown points and wing dams. Over 20 mph is unsafe, so fish sheltered water.</li>
+<li><b>Pressure:</b> falling before a front tends to be good. A sharp rise after a front ("bluebird") is tough, so slow down and go deeper.</li>
+<li><b>Light:</b> dawn, dusk and cloudy days are better.</li>
+<li><b>Season:</b> late fall into winter, walleye and sauger concentrate in the tailwater below Lock &amp; Dam 8 (Genoa). Always follow posted restricted areas near the dam.</li></ul></div></div>
+<div class="card"><h2>Reports &amp; Surveys</h2><div class="s">No angler reports are shown here because none could be verified. Official info: <a href="https://dnr.wisconsin.gov/topic/fishing/regulations">WI DNR fishing regulations (boundary waters table)</a> · <a href="https://dnr.wisconsin.gov/topic/Fishing/surveys">WI DNR fisheries survey reports</a> · <a href="https://umesc.usgs.gov/ltrm-home.html">USGS Upper Mississippi Long Term Resource Monitoring (fish data, Pool 8)</a></div></div>
+</section>
 
-<div class="card"><h2>Weather &amp; Wind</h2><div id="wx">Loading…</div><div class="s">Source: <a href="https://open-meteo.com/">Open-Meteo</a></div></div>
+<section class="tab" id="t-log">
+<div class="card"><h2>New Trip Entry</h2>
+<label>Date<input id="lDate" type="date"></label>
+<label>Spot<input id="lSpot" placeholder="e.g. wing dam below Victory"></label>
+<label>Walleye caught<input id="lFish" type="number" min="0" value="0"></label>
+<label>Biggest (inches)<input id="lBig" type="number" step="0.5"></label>
+<label>Bait / presentation<input id="lBait" placeholder="e.g. 3/8 jig + minnow"></label>
+<label>Water temp °F (optional)<input id="lWT" type="number"></label>
+<label>Notes<textarea id="lNotes" rows="3"></textarea></label>
+<button id="lSave">Save trip + conditions</button><div class="s">Saves the current weather, wind, pressure, river level/trend, and moon phase with the trip. The log stays on this phone only.</div></div>
+<div class="card"><h2>What's Working</h2><div id="lStats">No trips yet.</div></div>
+<div class="card"><h2>Trips</h2><div id="lList"></div>
+<button id="lExp">Export backup</button><label style="display:inline"><button onclick="lImp.click()">Import backup</button></label><input id="lImp" type="file" accept=".json,application/json" hidden></div>
+</section>
 
-<div class="card"><h2>Mississippi River (live)</h2><div id="river">Loading…</div>
-<div class="s">NOAA NWPS gauges: <a href="https://water.noaa.gov/gauges/GENW3">Below Lock &amp; Dam 8, Genoa (GENW3)</a> — closest upstream of Victory (Pool 9) · <a href="https://water.noaa.gov/gauges/LACW3">La Crosse (LACW3)</a> · <a href="https://water.noaa.gov/gauges/LYNW3">Below L&amp;D 9, Lynxville (LYNW3)</a></div></div>
+<section class="tab" id="t-map"><div id="map"></div>
+<div class="s">Ramps come from OpenStreetMap and only a few have names. They're mapped, not field-verified, so check access, fees and refuge closures before launching. Tap a marker for directions.</div></section>
 
+<section class="tab" id="t-regs">
 <div class="card"><h2>2026 Deer</h2><table>
 <tr><td>Archery &amp; Crossbow</td><td>Sept. 12 – Jan. 3, 2027*</td></tr>
 <tr><td>Youth Deer Hunt</td><td>Oct. 10–11</td></tr>
@@ -71,30 +104,12 @@ Register every deer (and turkey) harvest through GameReg — Go Wild app, <a hre
 The Mississippi has its own boundary-water seasons and bag limits (with reciprocal license rules for MN/IA) that differ from inland waters. Specific limits: <span class="chk">check DNR</span> — "Boundary Waters" table in the <a href="https://dnr.wisconsin.gov/topic/fishing/regulations">2026–2027 Hook &amp; Line Guide</a>. Victory is on Pool 9 (WI–IA border just south of the MN line).</div>
 
 <div class="card"><h2>Landings &amp; Refuge</h2>
-Victory and Genoa landings: locations/status <span class="chk">not verified — check DNR / refuge map</span>. Find landings: <a href="https://dnr.wisconsin.gov/topic/lands/PublicAccessLands">DNR Public Access Lands map</a>.<br><br>
+Ramp locations: see the Map tab (mapped ramps, not field-verified). Ramp status and fees: <span class="chk">check DNR / refuge</span>. Find landings: <a href="https://dnr.wisconsin.gov/topic/lands/PublicAccessLands">DNR Public Access Lands map</a>.<br><br>
 Much of the river around Victory is in the <a href="https://www.fws.gov/refuge/upper-mississippi-river">Upper Mississippi River National Wildlife &amp; Fish Refuge</a>. It has closed areas during waterfowl season and its own rules on stands, blinds, and boats. Specifics: <span class="chk">check refuge</span> (refuge hunting/fishing regulations brochure at that link).</div>
 
 <div class="card"><h2>Licenses</h2>Buy &amp; carry licenses on the <a href="https://gowild.wi.gov/">Go Wild</a> app (digital licenses accepted). Prices &amp; Conservation Patron details: <span class="chk">check DNR</span>.</div>
-<div class="s">Info pulled from dnr.wisconsin.gov on Oct. 16, 2026. Rules change. The DNR regulations are the final word.</div>
-</main>
-<script>
-const CODE="7379";const g=document.getElementById('gate'),pin=document.getElementById('pin');
-function unlock(){g.remove();app.hidden=false;run()}
-if(localStorage.wiok===CODE)unlock();
-pin.oninput=()=>{if(pin.value.length===4){if(pin.value===CODE){localStorage.wiok=CODE;unlock()}else{bad.textContent='Wrong code';pin.value=''}}};
-const HOME={lat:43.4886,lon:-91.2196};let P=HOME;
-const f=d=>d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-function sunTimes(date,lat,lon){const r=Math.PI/180,J=date/864e5+2440587.5,n=Math.round(J-2451545-0.0009+lon/360)*1, Js=2451545+0.0009-lon/360+n,M=(357.5291+0.98560028*(Js-2451545))%360,C=1.9148*Math.sin(M*r)+0.02*Math.sin(2*M*r)+0.0003*Math.sin(3*M*r),L=(M+102.9372+C+180)%360,Jt=Js+0.0053*Math.sin(M*r)-0.0069*Math.sin(2*L*r),d=Math.asin(Math.sin(L*r)*Math.sin(23.44*r)),w=Math.acos((Math.sin(-0.833*r)-Math.sin(lat*r)*Math.sin(d))/(Math.cos(lat*r)*Math.cos(d)))/r,t=j=>new Date((j-2440587.5)*864e5);return[t(Jt-w/360),t(Jt+w/360)]}
-function sun(){const[a,b]=sunTimes(new Date(new Date().setHours(12,0,0,0)),P.lat,P.lon),m=6e4;
-document.getElementById('sun').innerHTML='<table><tr><td>Sunrise</td><td class=big>'+f(a)+'</td></tr><tr><td>Sunset</td><td class=big>'+f(b)+'</td></tr><tr><td>Shooting starts (−20 min)</td><td><b>'+f(new Date(a-20*m))+'</b></td></tr><tr><td>Shooting ends (+20 min)</td><td><b>'+f(new Date(+b+20*m))+'</b></td></tr></table>'}
-const dir=d=>['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8];
-async function wx(){try{const u='https://api.open-meteo.com/v1/forecast?latitude='+P.lat+'&longitude='+P.lon+'&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=5';
-const j=await(await fetch(u)).json(),c=j.current;let h='<div class=big>'+Math.round(c.temperature_2m)+'°F <span class=s>feels '+Math.round(c.apparent_temperature)+'°</span></div><div>Wind '+dir(c.wind_direction_10m)+' '+Math.round(c.wind_speed_10m)+' mph, gusts '+Math.round(c.wind_gusts_10m)+'</div><table>';
-const now=Date.now();let k=0;for(let i=0;i<j.hourly.time.length&&k<8;i++){const t=new Date(j.hourly.time[i]);if(t<now-36e5)continue;if(k++%1===0)h+='<tr><td>'+t.toLocaleTimeString([], {hour:'numeric'})+'</td><td>'+Math.round(j.hourly.temperature_2m[i])+'° · '+dir(j.hourly.wind_direction_10m[i])+' '+Math.round(j.hourly.wind_speed_10m[i])+' mph · '+j.hourly.precipitation_probability[i]+'% rain</td></tr>'}
-h+='</table><table>';j.daily.time.forEach((d,i)=>{h+='<tr><td>'+new Date(d+'T12:00').toLocaleDateString([], {weekday:'short'})+'</td><td>'+Math.round(j.daily.temperature_2m_min[i])+'–'+Math.round(j.daily.temperature_2m_max[i])+'° · '+dir(j.daily.wind_direction_10m_dominant[i])+' to '+Math.round(j.daily.wind_speed_10m_max[i])+' mph · '+j.daily.precipitation_probability_max[i]+'%</td></tr>'});
-document.getElementById('wx').innerHTML=h+'</table>'}catch(e){document.getElementById('wx').textContent='Weather unavailable (no signal?)'}}
-async function river(){let h='<table>';for(const[g,n]of[['GENW3','Below L&D 8, Genoa'],['LACW3','La Crosse']]){try{const s=(await(await fetch('https://api.water.noaa.gov/nwps/v1/gauges/'+g)).json()).status.observed;h+='<tr><td>'+n+'</td><td><b>'+s.primary+' '+s.primaryUnit+'</b> · '+s.secondary+' '+s.secondaryUnit+'<br><span class=s>'+s.floodCategory.replace(/_/g,' ')+' · '+new Date(s.validTime).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span></td></tr>'}catch(e){h+='<tr><td>'+n+'</td><td>unavailable</td></tr>'}}document.getElementById('river').innerHTML=h+'</table><div class=s>Genoa reading is water elevation (ft); La Crosse is stage.</div>'}
-function run(){sun();wx();river()}
-gps.onclick=e=>{e.preventDefault();navigator.geolocation.getCurrentPosition(p=>{P={lat:p.coords.latitude,lon:p.coords.longitude};loc.firstChild.textContent='Location: your GPS ('+P.lat.toFixed(3)+', '+P.lon.toFixed(3)+') · ';sun();wx()},()=>alert('Location not allowed'))};
-home.onclick=e=>{e.preventDefault();P=HOME;loc.firstChild.textContent='Location: Victory, WI (Stevens Rd area, approx.) · ';sun();wx()};
-</script></body></html>
+<div class="s">Regulations pulled from dnr.wisconsin.gov on Oct. 16, 2026. The DNR regulations are the final word.</div>
+</section></main>
+<nav><button data-t="brain" class="on">🎣 Brain</button><button data-t="log">📓 Log</button><button data-t="map">🗺️ Map</button><button data-t="regs">📋 Regs</button></nav></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script></body></html>
